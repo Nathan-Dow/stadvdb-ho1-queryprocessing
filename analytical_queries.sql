@@ -29,7 +29,7 @@ LIMIT 10;
 
 -- QUERY 2: Get the top 20 most rented movies (by rental count), and see if their average rental duration (by days) is longer than the average in its category
 SELECT 
-	f1.title, 
+  f1.title, 
   COUNT(f1.title) AS no_rentals, 
   AVG(TIMESTAMPDIFF(DAY, r1.rental_date, r1.return_date)) AS film_avg_rental_period,
   CASE 
@@ -53,7 +53,7 @@ ORDER BY no_rentals DESC, film_avg_rental_period DESC
 LIMIT 20;
 
 EXPLAIN SELECT 
-	f1.title, 
+  f1.title, 
   COUNT(f1.title) AS no_rentals, 
   AVG(TIMESTAMPDIFF(DAY, r1.rental_date, r1.return_date)) AS film_avg_rental_period,
   CASE 
