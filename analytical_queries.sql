@@ -76,7 +76,45 @@ GROUP BY f1.title, fc1.category_id
 ORDER BY no_rentals DESC, film_avg_rental_period DESC
 LIMIT 20;
 
--- QUERY 3:
+-- QUERY 3: Get the top 10% of customers who rented movies the longest. Do these customers generate above or below average revenue compared to the overall customer base
+SELECT 
+    ranked.customer_id,
+    ranked.customer_name,
+    ranked.avg_hours_kept,
+    ranked.total_rentals,
+    ranked.customer_revenue,
+
+    ranked.overall_mean_rentals,
+    ranked.overall_mean_revenue,
+
+    CASE 
+        WHEN ranked.customer_revenue > ranked.overall_mean_revenue THEN 'Above Mean'
+        ELSE 'At or Below Mean'
+    END AS revenue_status
+FROM (
+    SELECT 
+        c.customer_id,
+        CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
+        COUNT(r.rental_id) AS total_rentals,
+        ROUND(AVG(TIMESTAMPDIFF(HOUR, r.rental_date, r.return_date)), 2) AS avg_hours_kept,
+        ROUND(SUM(p.amount), 2) AS customer_revenue,
+        
+        NTILE(10) OVER (
+            ORDER BY AVG(TIMESTAMPDIFF(HOUR, r.rental_date, r.return_date)) DESC
+        ) AS duration_decile,
+        
+        ROUND(AVG(COUNT(r.rental_id)) OVER (), 2) AS overall_mean_rentals,
+        ROUND(AVG(SUM(p.amount)) OVER (), 2) AS overall_mean_revenue
+
+    FROM customer c
+    JOIN rental r ON c.customer_id = r.customer_id
+    JOIN payment p ON r.rental_id = p.rental_id
+    WHERE r.return_date IS NOT NULL
+      AND r.return_date >= r.rental_date
+    GROUP BY c.customer_id, c.first_name, c.last_name
+) AS ranked
+WHERE ranked.duration_decile = 1
+ORDER BY ranked.avg_hours_kept DESC;
 
 -- QUERY 4:
 
