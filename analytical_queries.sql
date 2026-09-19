@@ -27,7 +27,54 @@ GROUP BY c.customer_id
 ORDER BY total_spent DESC 
 LIMIT 10;
 
--- QUERY 2:
+-- QUERY 2: Get the top 20 most rented movies (by rental count), and see if their average rental duration (by days) is longer than the average in its category
+SELECT 
+	f1.title, 
+  COUNT(f1.title) AS no_rentals, 
+  AVG(TIMESTAMPDIFF(DAY, r1.rental_date, r1.return_date)) AS film_avg_rental_period,
+  CASE 
+    WHEN (
+      SELECT AVG(TIMESTAMPDIFF(DAY, r2.rental_date, r2.return_date))
+      FROM film f2
+      JOIN inventory i2 ON f2.film_id = i2.film_id
+      JOIN rental r2 ON i2.inventory_id = r2.inventory_id
+      JOIN film_category fc2 ON f2.film_id = fc2.film_id
+      WHERE fc1.category_id = fc2.category_id
+      GROUP BY fc2.category_id
+    ) < AVG(TIMESTAMPDIFF(DAY, r1.rental_date, r1.return_date)) THEN 'TRUE'
+    ELSE 'FALSE'
+  END AS is_rented_longer_than_category_average
+FROM film f1
+JOIN inventory i1 ON f1.film_id = i1.film_id
+JOIN rental r1 ON i1.inventory_id = r1.inventory_id
+JOIN film_category fc1 ON f1.film_id = fc1.film_id 
+GROUP BY f1.title, fc1.category_id
+ORDER BY no_rentals DESC, film_avg_rental_period DESC
+LIMIT 20;
+
+EXPLAIN SELECT 
+	f1.title, 
+  COUNT(f1.title) AS no_rentals, 
+  AVG(TIMESTAMPDIFF(DAY, r1.rental_date, r1.return_date)) AS film_avg_rental_period,
+  CASE 
+    WHEN (
+      SELECT AVG(TIMESTAMPDIFF(DAY, r2.rental_date, r2.return_date))
+      FROM film f2
+      JOIN inventory i2 ON f2.film_id = i2.film_id
+      JOIN rental r2 ON i2.inventory_id = r2.inventory_id
+      JOIN film_category fc2 ON f2.film_id = fc2.film_id
+      WHERE fc1.category_id = fc2.category_id
+      GROUP BY fc2.category_id
+    ) < AVG(TIMESTAMPDIFF(DAY, r1.rental_date, r1.return_date)) THEN 'TRUE'
+    ELSE 'FALSE'
+  END AS is_rented_longer_than_category_average
+FROM film f1
+JOIN inventory i1 ON f1.film_id = i1.film_id
+JOIN rental r1 ON i1.inventory_id = r1.inventory_id
+JOIN film_category fc1 ON f1.film_id = fc1.film_id 
+GROUP BY f1.title, fc1.category_id
+ORDER BY no_rentals DESC, film_avg_rental_period DESC
+LIMIT 20;
 
 -- QUERY 3:
 
