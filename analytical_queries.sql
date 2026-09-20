@@ -77,6 +77,7 @@ ORDER BY no_rentals DESC, film_avg_rental_period DESC
 LIMIT 20;
 
 -- QUERY 3: Get the top 10% of customers who rented movies the longest. Do these customers generate above or below average revenue compared to the overall customer base
+EXPLAIN
 SELECT 
     ranked.customer_id,
     ranked.customer_name,
@@ -117,6 +118,14 @@ WHERE ranked.duration_decile = 1
 ORDER BY ranked.avg_hours_kept DESC;
 
 -- QUERY 3 (Optimized):
+
+CREATE INDEX idx_rental_cust_dates 
+ON rental (customer_id, return_date, rental_date, rental_id);
+
+CREATE INDEX idx_payment_rental_amt 
+ON payment (rental_id, amount);
+
+EXPLAIN
 WITH customer_aggregates AS (
     SELECT 
         r.customer_id,
