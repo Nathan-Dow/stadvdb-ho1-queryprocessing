@@ -116,6 +116,48 @@ FROM (
 WHERE ranked.duration_decile = 1
 ORDER BY ranked.avg_hours_kept DESC;
 
+-- QUERY 3 (Optimized):
+WITH customer_aggregates AS (
+    SELECT 
+        r.customer_id,
+        COUNT(r.rental_id) AS total_rentals,
+        ROUND(AVG(TIMESTAMPDIFF(HOUR, r.rental_date, r.return_date)), 2) AS avg_hours_kept,
+        ROUND(SUM(p.amount), 2) AS customer_revenue
+    FROM rental r
+    JOIN payment p ON r.rental_id = p.rental_id
+    WHERE r.return_date >= r.rental_date
+    GROUP BY r.customer_id
+),
+ranked_customers AS (
+    SELECT 
+        ca.customer_id,
+        ca.total_rentals,
+        ca.avg_hours_kept,
+        ca.customer_revenue,
+        NTILE(10) OVER (
+            ORDER BY ca.avg_hours_kept DESC
+        ) AS duration_decile,
+        ROUND(AVG(ca.total_rentals) OVER (), 2) AS overall_mean_rentals,
+        ROUND(AVG(ca.customer_revenue) OVER (), 2) AS overall_mean_revenue
+    FROM customer_aggregates ca
+)
+SELECT 
+    rc.customer_id,
+    CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
+    rc.avg_hours_kept,
+    rc.total_rentals,
+    rc.overall_mean_rentals,
+    rc.customer_revenue,
+    rc.overall_mean_revenue,
+    CASE 
+        WHEN rc.customer_revenue > rc.overall_mean_revenue THEN 'Above Mean'
+        ELSE 'At or Below Mean'
+    END AS revenue_status
+FROM ranked_customers rc
+JOIN customer c ON c.customer_id = rc.customer_id
+WHERE rc.duration_decile = 1
+ORDER BY rc.avg_hours_kept DESC;
+
 -- QUERY 4: Which film categories generate the most revenue, and what is their average rental duration in hours?
 SELECT 
     c.name AS category_name,
