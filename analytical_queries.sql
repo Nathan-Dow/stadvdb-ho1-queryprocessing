@@ -116,7 +116,36 @@ FROM (
 WHERE ranked.duration_decile = 1
 ORDER BY ranked.avg_hours_kept DESC;
 
--- QUERY 4:
+-- QUERY 4: Which film categories generate the most revenue, and what is their average rental duration in hours?
+SELECT 
+    c.name AS category_name,
+    COUNT(r.rental_id) AS total_rentals,
+    SUM(p.amount) AS total_revenue,
+    ROUND(AVG(TIMESTAMPDIFF(HOUR, r.rental_date, r.return_date)), 2) AS avg_rental_hours
+FROM category c
+JOIN film_category fc ON c.category_id = fc.category_id
+JOIN film f ON fc.film_id = f.film_id
+JOIN inventory i ON f.film_id = i.film_id
+JOIN rental r ON i.inventory_id = r.inventory_id
+JOIN payment p ON r.rental_id = p.rental_id
+WHERE r.return_date IS NOT NULL
+GROUP BY c.name
+ORDER BY total_revenue DESC;
+
+EXPLAIN SELECT 
+    c.name AS category_name,
+    COUNT(r.rental_id) AS total_rentals,
+    SUM(p.amount) AS total_revenue,
+    ROUND(AVG(TIMESTAMPDIFF(HOUR, r.rental_date, r.return_date)), 2) AS avg_rental_hours
+FROM category c
+JOIN film_category fc ON c.category_id = fc.category_id
+JOIN film f ON fc.film_id = f.film_id
+JOIN inventory i ON f.film_id = i.film_id
+JOIN rental r ON i.inventory_id = r.inventory_id
+JOIN payment p ON r.rental_id = p.rental_id
+WHERE r.return_date IS NOT NULL
+GROUP BY c.name
+ORDER BY total_revenue DESC;
 
 -- ----------------------------------------------------------------------------
 -- PART 2: APPLY OPTIMIZATIONS (INDEXING)
